@@ -34,7 +34,7 @@ from = ARGV[1]
 to = ARGV[2]
 line = ARGV[0]
 
-if ARGV.count < 3 || ARGV[0].to_i.to_s != ARGV[0]
+if ARGV.count < 3 || (ARGV[0].to_i.to_s != ARGV[0] && !%w(t n).include?(ARGV[0][0].downcase))
   puts 'Składnia: ruby peka.rb LINIA PRZYSTANEK KIERUNEK'
   exit
 end
@@ -68,7 +68,7 @@ bollards.select! do |b|
   end
 end
 if bollards.empty?
-  puts "Nie znaleziono przystanków linii #{line} w kierunku #{to}"
+  puts "Nie znaleziono przystanków linii #{line} z #{stop_name} w kierunku #{to}"
   exit
 end
 
@@ -84,7 +84,7 @@ res = api_request('getTimes', symbol: stop_symbol)
 
 parsed = parse_response(res)
 # puts parsed['success']['times']
-departure = parsed['success']['times'].find { |t| t['line'].to_i == line.to_i && t['direction'].downcase.match(to.downcase) }
+departure = parsed['success']['times'].find { |t| t['line'].to_s.downcase == line.to_s.downcase && t['direction'].downcase.match(to.downcase) }
 if departure.nil?
   puts "Nie znaleziono odjazdów"
   exit

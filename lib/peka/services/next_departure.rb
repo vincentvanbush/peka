@@ -16,6 +16,10 @@ module Peka
         nil
       end
 
+      def to_s
+        "#{@line} #{@stop_name} -> #{@dir_name} odjeżdża za #{@mins_left} minut"
+      end
+
       private
 
       def find_stop
@@ -24,7 +28,7 @@ module Peka
 
         parsed = parse_response(res)
         if parsed['success'].empty?
-          fail 'Nie znaleziono grupy przystanków'
+          fail "Nie znaleziono grupy przystanków '#{@from}'"
         end
         exact_match = parsed['success'].find do |m|
           m['name'].downcase == @from.downcase

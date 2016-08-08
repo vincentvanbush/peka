@@ -28,8 +28,10 @@ module Peka
       JSON.parse(res.body)
     end
 
-    def sanitize_args
-      if ARGV.count < 3 || (ARGV[0].to_i.to_s != ARGV[0] && !%w(t n).include?(ARGV[0][0].downcase))
+    def match_service_from_args(service_preference)
+      if ARGV.count == 3 && (ARGV[0].to_i.to_s == ARGV[0] || %w(t n).include?(ARGV[0][0].downcase))
+        NextDeparture
+      else
         puts 'Składnia: ruby peka.rb LINIA PRZYSTANEK KIERUNEK'
         exit
       end

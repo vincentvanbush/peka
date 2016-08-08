@@ -6,8 +6,7 @@ require_relative 'lib/peka'
 include Peka::Utils
 include Peka::Services
 
-service_preference = [NextDeparture] # moar plz
-service_class = match_service_from_args(service_preference)
+service_class = match_service_from_args
 
 # line, from, to = ARGV
 service = service_class.new(*ARGV)

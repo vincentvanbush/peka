@@ -12,7 +12,17 @@ def timestamped_uri
 end
 
 def api_request(api_method, p0)
-  Net::HTTP.post_form(timestamped_uri, method: api_method, p0: p0.to_json)
+  uri = timestamped_uri
+  req = Net::HTTP::Post.new(uri)
+  req.set_form_data(method: api_method, p0: p0.to_json)
+  Net::HTTP.start(uri.hostname, uri.port) do |http|
+    http.request(req)
+  end
+  # Net::HTTP.post_form(timestamped_uri, method: api_method, p0: p0.to_json)
+end
+
+def parse_response(res)
+  JSON.parse(res.body.force_encoding('UTF-8'))
 end
 
 from = ARGV[1] # 'wilsona'
@@ -27,7 +37,7 @@ end
 # Get stop point by name pattern
 res = api_request('getStopPoints', pattern: from)
 
-parsed = JSON.parse(res.body)
+parsed = parse_response(res)
 if parsed['success'].empty?
   puts 'Nie znaleziono grupy przystanków'
   exit
@@ -37,7 +47,7 @@ puts stop_name
 # Get bollards by stop point name
 res = api_request('getBollardsByStopPoint', name: stop_name)
 
-parsed = JSON.parse(res.body)
+parsed = parse_response(res)
 if parsed['success']['bollards'].nil?
   puts "Nie znalziono przystanków w grupie '#{stop_name}'"
   exit
@@ -65,7 +75,7 @@ puts dir_name
 stop_symbol = bollards[0]['bollard']['tag']
 res = api_request('getTimes', symbol: stop_symbol)
 
-parsed = JSON.parse(res.body)
+parsed = parse_response(res)
 # puts parsed['success']['times']
 departure = parsed['success']['times'].find { |t| t['line'].to_i == line.to_i && t['direction'].downcase.match(to.downcase) }
 if departure.nil?

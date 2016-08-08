@@ -13,21 +13,26 @@ end
 
 def api_request(api_method, p0)
   uri = timestamped_uri
-  req = Net::HTTP::Post.new(uri)
-  req.set_form_data(method: api_method, p0: p0.to_json)
+  req = Net::HTTP::Post.new(
+    uri,
+    'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8'
+  )
+  # cholera wie, czemu to nie działa :) jakieś jaja z encodowaniem
+  # req.set_form_data(method: api_method, p0: p0.to_json)
+  # req.body.gsub! '+', '%20'
+  req.body = ("method=#{api_method}&p0=#{p0.to_json}")
   Net::HTTP.start(uri.hostname, uri.port) do |http|
     http.request(req)
   end
-  # Net::HTTP.post_form(timestamped_uri, method: api_method, p0: p0.to_json)
 end
 
 def parse_response(res)
-  JSON.parse(res.body.force_encoding('UTF-8'))
+  JSON.parse(res.body)
 end
 
-from = ARGV[1] # 'wilsona'
-to = ARGV[2] # 'wilczak'
-line = ARGV[0] # 14
+from = ARGV[1]
+to = ARGV[2]
+line = ARGV[0]
 
 if ARGV.count < 3 || ARGV[0].to_i.to_s != ARGV[0]
   puts 'Składnia: ruby peka.rb LINIA PRZYSTANEK KIERUNEK'
@@ -42,14 +47,17 @@ if parsed['success'].empty?
   puts 'Nie znaleziono grupy przystanków'
   exit
 end
-stop_name = parsed['success'][0]['name']
-puts stop_name
+exact_match = parsed['success'].find do |m|
+  m['name'].downcase == from.downcase
+end
+stop_name = exact_match ? exact_match['name'] : parsed['success'][0]['name']
+
 # Get bollards by stop point name
 res = api_request('getBollardsByStopPoint', name: stop_name)
 
 parsed = parse_response(res)
 if parsed['success']['bollards'].nil?
-  puts "Nie znalziono przystanków w grupie '#{stop_name}'"
+  puts "Nie znaleziono przystanków w grupie '#{stop_name}'"
   exit
 end
 bollards = parsed['success']['bollards']
@@ -69,7 +77,6 @@ d = bollards[0]['directions'].find do |dir|
   dir['lineName'].to_i == line.to_i && dir['direction'].downcase.match(to.downcase)
 end
 dir_name = d['direction']
-puts dir_name
 
 # puts bollards[0]['bollard']
 stop_symbol = bollards[0]['bollard']['tag']

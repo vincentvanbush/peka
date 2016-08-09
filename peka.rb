@@ -8,7 +8,6 @@ include Peka::Services
 
 service_class = match_service_from_args
 
-# line, from, to = ARGV
 service = service_class.new(*ARGV)
 if service.perform
   puts service.to_s

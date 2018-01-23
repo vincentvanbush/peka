@@ -19,7 +19,8 @@ module Peka
       end
 
       def to_s
-        "#{@line} #{@stop_name} -> #{@dir_name} odjeżdża za #{@mins_left} minut"
+        departure_time = (Time.now + @mins_left * 60).strftime('%H:%M')
+        "#{@line} #{@stop_name} -> #{@dir_name} odjeżdża za #{@mins_left} minut (#{departure_time})."
       end
 
       private

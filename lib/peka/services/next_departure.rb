@@ -1,3 +1,5 @@
+require 'pry'
+
 module Peka
   module Services
     class NextDeparture
@@ -44,14 +46,32 @@ module Peka
         if parsed['success']['bollards'].nil?
           fail "Nie znaleziono przystanków w grupie '#{stop_name}'"
         end
-        @bollards = parsed['success']['bollards']
 
-        @bollards.select! do |b|
+        @bollards = parsed['success']['bollards'].select do |b|
           b['directions'].any? do |dir|
             dir['lineName'].to_i == @line.to_i && dir['direction'].downcase.match(@to.downcase)
           end
         end
+
+        # Nie znaleziono przystanków
         if @bollards.empty?
+          bollards_by_line = parse_response(api_request('getBollardsByLine', name: @line))
+          relevant_direction = bollards_by_line['success']['directions'].find do |item|
+            relevant_line = item['direction']['lineName'] == @line
+            source_stop_index = item['bollards'].index { |b| b['name'].match(/#{stop_name}/i) }
+            target_stop_index = item['bollards'].index { |b| b['name'].match(/#{@to}/i) }
+            relevant_target = source_stop_index < target_stop_index
+            relevant_line && relevant_target
+          end
+          relevant_direction_final_stop = relevant_direction['direction']['direction']
+
+          @bollards = parsed['success']['bollards'].select do |b|
+            b['directions'].any? do |dir|
+              dir['lineName'].to_i == @line.to_i && dir['direction'] == relevant_direction_final_stop
+            end
+          end
+
+          @to = relevant_direction_final_stop and return if @bollards.any?
           fail "Nie znaleziono przystanków linii #{@line} z #{stop_name} w kierunku #{@to}"
         end
       end
